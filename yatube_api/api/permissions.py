@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 
-class AuthorOrReadOnly(permissions.BasePermission):
+class IsAuthorOrReadOnly(permissions.BasePermission):
     """
     Класс разрешения, который позволяет авторам редактировать свои собственные
     объекты, а всем остальным - читать их.
