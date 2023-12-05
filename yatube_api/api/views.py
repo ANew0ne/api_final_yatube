@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions, filters, mixins
 from rest_framework.pagination import LimitOffsetPagination
 
-from api.permissions import AuthorOrReadOnly, ReadOnly
+from api.permissions import AuthorOrReadOnly
 from api.serializers import (CommentSerializer,
                              GroupSerializer,
                              PostSerializer,
@@ -16,17 +16,12 @@ class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (AuthorOrReadOnly,)
+    permission_classes = (AuthorOrReadOnly,
+                          permissions.IsAuthenticatedOrReadOnly,)
 
     def perform_create(self, serializer):
         """Сохраняет новый пост."""
         serializer.save(author=self.request.user)
-
-    def get_permissions(self):
-        """Возвращает разрешения для текущего действия.s"""
-        if self.action == 'retrieve':
-            return (ReadOnly(),)
-        return super().get_permissions()
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -40,18 +35,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Представление для управления комментариями."""
 
     serializer_class = CommentSerializer
-    permission_classes = (AuthorOrReadOnly,)
-
-    def get_permissions(self):
-        """Возвращает разрешения для текущего действия."""
-        if self.action == 'retrieve':
-            return (ReadOnly(),)
-        return super().get_permissions()
+    permission_classes = (AuthorOrReadOnly,
+                          permissions.IsAuthenticatedOrReadOnly,)
 
     def get_post(self):
         """Возвращает связанный пост для запроса."""
-        post = get_object_or_404(Post, id=self.kwargs.get('post_id'))
-        return post
+        return get_object_or_404(Post, id=self.kwargs.get('post_id'))
 
     def perform_create(self, serializer):
         """Создает новый комментарий."""
@@ -59,8 +48,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Фильтрует комментарии по связанному посту."""
-        post = self.get_post()
-        queryset = post.comments.all()
+        queryset = self.get_post().comments.all()
         return queryset
 
 
